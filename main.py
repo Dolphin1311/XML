@@ -53,16 +53,61 @@ def add_car_to_xml(car: Car):
     root.appendChild(new_car)
 
     # for prettying xml
-    pretty_xml = tree.toprettyxml()
+    # pretty_xml = tree.toprettyxml()
+    # file.write(pretty_xml)
+
+    save_changes_in_xml(tree)
+    print('Car was added successfully!')
+
+
+def show_xml_file():
+    tree = minidom.parse(filename)
+    root = tree.documentElement
+
+    # get all cars
+    cars = root.getElementsByTagName('car')
+
+    for index, car in enumerate(cars):
+        print(f'-----Car #{index}-----')
+        if car.hasAttribute('brand'):
+            print(f'Brand: {car.getAttribute("brand")}')
+
+        # show info
+        print(f'Model: {car.getElementsByTagName("model")[0].childNodes[0].data}')
+        print(f'Speed: {car.getElementsByTagName("speed")[0].childNodes[0].data}')
+        print(f'Count of seats: {car.getElementsByTagName("count_seats")[0].childNodes[0].data}')
+
+
+def delete_car_from_xml(car_number: int):
+    if not check_if_xml_exists(filename):
+        create_xml_file()
+
+    tree = minidom.parse(filename)
+    root = tree.documentElement
+
+    car = root.childNodes[car_number]
+    root.removeChild(car)
+
+    save_changes_in_xml(tree)
+    print('Car was deleted successfully!')
+
+
+def check_if_xml_exists(filename):
+    if not os.path.exists('cars.xml'):
+        return False
+
+    return True
+
+
+def save_changes_in_xml(tree):
     with open(filename, 'w') as file:
-        # file.write(pretty_xml)
         tree.writexml(file)
 
 
 filename = 'cars.xml'
 # if there is no XML file => create it
-if not os.path.exists('cars.xml'):
-    create_xml_file(filename)
+if not check_if_xml_exists(filename):
+    create_xml_file()
 
 choose = ''
 
@@ -89,19 +134,8 @@ while choose != 0:
             add_car_to_xml(car)
         except ValueError:
             print('Enter correct value')
-    if choose == 4:
-        tree = minidom.parse(filename)
-        root = tree.documentElement
-
-        # get all cars
-        cars = root.getElementsByTagName('car')
-
-        for car in cars:
-            print('-----Car-----')
-            if car.hasAttribute('brand'):
-                print(f'Brand: {car.getAttribute("brand")}')
-
-            # show info
-            print(f'Model: {car.getElementsByTagName("model")[0].childNodes[0].data}')
-            print(f'Speed: {car.getElementsByTagName("speed")[0].childNodes[0].data}')
-            print(f'Count of seats: {car.getElementsByTagName("count_seats")[0].childNodes[0].data}')
+    elif choose == 2:
+        car_number = int(input('Enter car\'s number that you want to delete: '))
+        delete_car_from_xml(car_number)
+    elif choose == 4:
+        show_xml_file()
