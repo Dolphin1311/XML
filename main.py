@@ -17,7 +17,7 @@ class Car:
 def create_xml_file(filename):
     """Create xml file"""
     root = minidom.Document()
-    xml = root.createElement('Car')
+    xml = root.createElement('car')
     root.appendChild(xml)
     xml_str = root.toprettyxml(indent='\t')
 
@@ -25,9 +25,18 @@ def create_xml_file(filename):
         fw.write(xml_str)
 
 
-def add_car_to_xml(car: Car):
+def add_car(car: Car):
     """Add car's info to XML file"""
-    # TODO: check if XML file is good for writing
+    # check if xml file exists
+    if not check_if_xml_exists(filename):
+        create_xml_file()
+        print('File xml was created successfully')
+
+    # write to file main tag if it is no here
+    if not check_xml_for_writing(filename):
+        with open(filename, 'a') as file:
+            file.write('<cars/>')
+
     tree = minidom.parse(filename)
     root = tree.documentElement
 
@@ -56,16 +65,27 @@ def add_car_to_xml(car: Car):
     # pretty_xml = tree.toprettyxml()
     # file.write(pretty_xml)
 
-    save_changes_in_xml(tree)
+    save_changes(tree)
     print('Car was added successfully!')
 
 
 def show_xml_file():
+    """Show all data from XML file in good formatting"""
+    # check if xml file exists
+    if not check_if_xml_exists(filename):
+        create_xml_file()
+        print('File xml was created successfully')
+
+    # write to file main tag if it is no here
+    if not check_xml_for_writing(filename):
+        with open(filename, 'a') as file:
+            file.write('<cars/>')
+
     tree = minidom.parse(filename)
     root = tree.documentElement
 
     # get all cars
-    cars = root.getElementsByTagName('car')
+    cars = root.childNodes
 
     for index, car in enumerate(cars):
         print(f'-----Car #{index}-----')
@@ -78,18 +98,66 @@ def show_xml_file():
         print(f'Count of seats: {car.getElementsByTagName("count_seats")[0].childNodes[0].data}')
 
 
-def delete_car_from_xml(car_number: int):
+def delete_car(car_number: int):
+    """Delete all data about one car"""
+    # check if xml file exists
     if not check_if_xml_exists(filename):
         create_xml_file()
+        print('File xml was created successfully')
+
+    # write to file main tag if it is no here
+    if not check_xml_for_writing(filename):
+        with open(filename, 'a') as file:
+            file.write('<cars/>')
 
     tree = minidom.parse(filename)
     root = tree.documentElement
 
-    car = root.childNodes[car_number]
+    try:
+        car = root.childNodes[car_number]
+    except IndexError:
+        print('There is no such car!')
+        return
+
     root.removeChild(car)
 
-    save_changes_in_xml(tree)
+    save_changes(tree)
     print('Car was deleted successfully!')
+
+
+def update_car(car_number: int, brand: str, model: str, speed: float, count_seats: int):
+    """Update data about one car"""
+    # check if xml file exists
+    if not check_if_xml_exists(filename):
+        create_xml_file()
+        print('File xml was created successfully')
+
+    # write to file main tag if it is no here
+    if not check_xml_for_writing(filename):
+        with open(filename, 'a') as file:
+            file.write('<cars/>')
+
+    tree = minidom.parse(filename)
+    root = tree.documentElement
+    speed = str(speed)
+    count_seats = str(count_seats)
+
+    try:
+        car = root.childNodes[car_number]
+    except IndexError:
+        print('There is no such car!')
+        return
+
+    # set new data
+    if car.hasAttribute('brand'):
+        car.setAttribute('brand', brand)
+
+    car.getElementsByTagName('model')[0].childNodes[0].nodeValue = model
+    car.getElementsByTagName('speed')[0].childNodes[0].nodeValue = speed
+    car.getElementsByTagName('count_seats')[0].childNodes[0].nodeValue = count_seats
+
+    save_changes(tree)
+    print('Car was updated successfully!')
 
 
 def check_if_xml_exists(filename):
@@ -99,15 +167,24 @@ def check_if_xml_exists(filename):
     return True
 
 
-def save_changes_in_xml(tree):
+def check_xml_for_writing(filename):
+    try:
+        minidom.parse(filename)
+        return True
+    except ExpatError:
+        return False
+
+
+def save_changes(tree):
     with open(filename, 'w') as file:
         tree.writexml(file)
 
 
 filename = 'cars.xml'
+
 # if there is no XML file => create it
 if not check_if_xml_exists(filename):
-    create_xml_file()
+    create_xml_file(filename)
 
 choose = ''
 
@@ -131,11 +208,24 @@ while choose != 0:
 
             # create instance of Car object
             car = Car(brand, model, speed, count_of_seats)
-            add_car_to_xml(car)
+            add_car(car)
         except ValueError:
             print('Enter correct value')
     elif choose == 2:
         car_number = int(input('Enter car\'s number that you want to delete: '))
-        delete_car_from_xml(car_number)
+        delete_car(car_number)
+    elif choose == 3:
+        car_number = int(input('Enter car\'s number that you want to update: '))
+        new_brand = input('Enter new brand: ')
+        new_model = input('Enter new model: ')
+
+        try:
+            new_speed = float(input('Enter new speed: '))
+            new_count_of_seats = int(input('Enter new count of seats: '))
+
+            update_car(car_number, new_brand, new_model, new_speed, new_count_of_seats)
+        except ValueError:
+            print('Enter correct value')
+
     elif choose == 4:
         show_xml_file()
