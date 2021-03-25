@@ -1,5 +1,5 @@
-import xml.etree.ElementTree as ET
 from xml.dom import minidom
+from xml.parsers.expat import ExpatError
 import os.path
 
 
@@ -14,7 +14,7 @@ class Car:
         return self.brand + ' ' + self.model
 
 
-def create_xml(filename):
+def create_xml_file(filename):
     """Create xml file"""
     root = minidom.Document()
     xml = root.createElement('Car')
@@ -26,32 +26,45 @@ def create_xml(filename):
 
 
 def add_car_to_xml(car: Car):
-    tree = ET.parse(filename)
-    root = tree.getroot()
+    """Add car's info to XML file"""
+    # TODO: check if XML file is good for writing
+    tree = minidom.parse(filename)
+    root = tree.documentElement
 
-    # create elements
-    child = ET.Element('Car')
-    child.set('brand', car.brand)
-    model = ET.SubElement(child, 'model')
-    model.text = car.model
-    speed = ET.SubElement(child, 'speed')
-    speed.text = str(car.speed)
-    count_of_seats = ET.SubElement(child, 'count_seats')
-    count_of_seats.text = str(car.count_seats)
+    # create main element
+    new_car = tree.createElement('car')
+    new_car.setAttribute('brand', car.brand)
 
-    root.append(child)
+    # create child elements
+    model = tree.createElement('model')
+    model.appendChild(tree.createTextNode(car.model))
 
-    # add data to XML file
-    with open(filename, 'wb') as file:
-        tree.write(file)
+    speed = tree.createElement('speed')
+    speed.appendChild(tree.createTextNode(str(car.speed)))
+
+    count_of_seats = tree.createElement('count_seats')
+    count_of_seats.appendChild(tree.createTextNode(str(car.count_seats)))
+
+    # append elements to main element
+    new_car.appendChild(model)
+    new_car.appendChild(speed)
+    new_car.appendChild(count_of_seats)
+
+    root.appendChild(new_car)
+
+    # for prettying xml
+    pretty_xml = tree.toprettyxml()
+    with open(filename, 'w') as file:
+        # file.write(pretty_xml)
+        tree.writexml(file)
 
 
 filename = 'cars.xml'
 # if there is no XML file => create it
 if not os.path.exists('cars.xml'):
-    create_xml(filename)
+    create_xml_file(filename)
 
-choose = 1
+choose = ''
 
 while choose != 0:
     print('1)Add car\n'
